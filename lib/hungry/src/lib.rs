@@ -1,0 +1,41 @@
+#![allow(unused)]
+
+use bytes::BytesMut;
+use tokio::io::{AsyncRead, AsyncWrite};
+
+mod envelope;
+
+pub(crate) mod crypto;
+
+pub mod api;
+pub mod mtproto;
+pub mod reader;
+pub mod tl;
+pub mod transport;
+pub mod utils;
+pub mod writer;
+
+use transport::Transport;
+
+pub(crate) use envelope::envelopes;
+
+pub use envelope::{Envelope, EnvelopeSize};
+
+pub fn new<
+    T: Transport + Default,
+    R: AsyncRead + Unpin,
+    W: AsyncWrite + Unpin,
+    B: reader::ReaderBehaviour,
+>(
+    reader: R,
+    writer: W,
+    reader_behaviour: B,
+    reader_buffer: BytesMut,
+) -> (reader::Reader<R, B, T>, writer::Writer<W, T>) {
+    let (reader_transport, writer_transport) = T::default().split();
+
+    let writer = writer::Writer::new(writer, writer_transport);
+    let reader = reader::Reader::new(reader, reader_behaviour, reader_transport, reader_buffer);
+
+    (reader, writer)
+}
