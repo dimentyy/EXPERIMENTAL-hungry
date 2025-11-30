@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::slice;
 
-use crate::tl::de::Error;
+use crate::de::Error;
 
 pub struct Buf<'a> {
     pub(super) ptr: *const u8,
@@ -59,10 +59,5 @@ impl<'a> Buf<'a> {
         unsafe { self.advance_unchecked(n) };
 
         Ok(ptr)
-    }
-
-    #[inline]
-    pub(crate) unsafe fn read_unchecked<const N: usize>(&mut self) -> [u8; N] {
-        unsafe { (self.ptr as *const [u8; N]).read_unaligned() }
     }
 }

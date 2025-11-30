@@ -1,32 +1,55 @@
-#![allow(unused)]
+pub mod de;
+mod ser;
 
-mod casing;
-mod category;
-mod code;
-mod config;
-mod macros;
-mod meta;
-mod read;
-mod rust;
+pub use ser::Serialize;
 
-use std::fmt::Formatter;
-use std::{fmt, fs, io};
-
-pub(crate) use config::Cfg;
-
-pub use chumsky;
-
-pub use category::Category;
-pub use config::Config;
-
-type F = io::BufWriter<fs::File>;
-
-pub fn generate(config: Config, schema: &str) {
-    let config = Cfg::new(config);
-
-    let parsed = read::parse(&config, schema).unwrap();
-
-    let data = meta::validate(&parsed).unwrap();
-
-    code::generate(&config, &data).unwrap();
+#[allow(unused_imports, unused_mut)]
+pub mod api {
+    include!(concat!(env!("OUT_DIR"), "/hungry_tl/api/mod.rs"));
 }
+
+#[allow(unused_imports, unused_mut)]
+pub mod mtproto {
+    include!(concat!(env!("OUT_DIR"), "/hungry_tl/mtproto/mod.rs"));
+}
+
+const BOOL_TRUE: u32 = 0x997275b5;
+const BOOL_FALSE: u32 = 0xbc799737;
+const VECTOR: u32 = 0x1cb5c415;
+
+pub type Int128 = [u8; 16];
+pub type Int256 = [u8; 32];
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BareVec<T>(pub Vec<T>);
+
+pub trait Identifiable {
+    const CONSTRUCTOR_ID: u32;
+}
+
+pub trait Function: Identifiable + Serialize {
+    type Response: de::Deserialize;
+}
+
+pub trait SerializedLen {
+    const SERIALIZED_LEN: usize;
+}
+
+macro_rules! impl_serialized_len {
+    ( $( $typ:ty => $len:expr ),+ $(,)? ) => { $(
+        impl SerializedLen for $typ {
+            const SERIALIZED_LEN: usize = $len;
+        }
+    )+ };
+}
+
+impl_serialized_len!(
+    u32 => 4,
+    i32 => 4,
+    i64 => 8,
+    f64 => 8,
+    bool => 4,
+    Int128 => 16,
+    Int256 => 32,
+);
+

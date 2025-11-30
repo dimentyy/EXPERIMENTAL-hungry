@@ -9,11 +9,6 @@ use crate::envelopes;
 pub use auth_key::AuthKey;
 pub use unpack::{DecryptedMessage, EncryptedMessage, Message, PlainMessage};
 
-#[allow(unused_imports, unused_mut)]
-pub mod tl {
-    include!(concat!(env!("OUT_DIR"), "/hungry_tl/mtproto/mod.rs"));
-}
-
 enum Side {
     Client = 0,
     Server = 8,

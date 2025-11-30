@@ -1,5 +1,5 @@
-use crate::tl::de::{DeserializeInfallible, DeserializeUnchecked, Error};
-use crate::tl::{BOOL_FALSE, BOOL_TRUE};
+use crate::de::{DeserializeInfallible, DeserializeUnchecked, Error};
+use crate::{BOOL_FALSE, BOOL_TRUE};
 
 macro_rules! int {
     ( $( $typ:ty ),+ ) => { $(

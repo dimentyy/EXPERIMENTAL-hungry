@@ -6,8 +6,8 @@ use crate::writer::run_writer;
 
 use bytes::BytesMut;
 
-use hungry::tl::{Serialize, Int128};
-use hungry::{Envelope, mtproto};
+use hungry::tl::{self, Serialize};
+use hungry::{Envelope};
 use hungry::reader::{Dump, PlainDeserializer};
 use hungry::writer::QueuedWriter;
 
@@ -23,10 +23,10 @@ fn queue_request(writer: &mut QueuedWriter<Write, Transport>) {
     let transport_envelope = Envelope::split(&mut buffer);
     let mtp_envelope = Envelope::split(&mut buffer);
 
-    let mut nonce = Int128::default();
+    let mut nonce = tl::Int128::default();
     rand::fill(&mut nonce);
-
-    let request = mtproto::tl::funcs::ReqPqMulti { nonce };
+    
+    let request = tl::mtproto::funcs::ReqPqMulti { nonce };
 
     unsafe {
         buffer.set_len(request.serialized_len());

@@ -38,7 +38,7 @@ pub(super) fn write_typ(
         Typ::String => b"String",
         Typ::Bool => b"bool",
         Typ::BareVector(typ) => {
-            f.write_all(if turbofish { b"_tl::BareVec::<" } else { b"_tl::BareVec<" })?;
+            f.write_all(if turbofish { b"crate::BareVec::<" } else { b"crate::BareVec<" })?;
             write_typ(f, cfg, data, generic_args, typ, false)?;
             b">"
         }
@@ -47,8 +47,8 @@ pub(super) fn write_typ(
             write_typ(f, cfg, data, generic_args, typ, false)?;
             b">"
         }
-        Typ::Int128 => b"_tl::Int128",
-        Typ::Int256 => b"_tl::Int256",
+        Typ::Int128 => b"crate::Int128",
+        Typ::Int256 => b"crate::Int256",
         Typ::Generic { index } => generic_args[*index].name.as_bytes(),
     };
 

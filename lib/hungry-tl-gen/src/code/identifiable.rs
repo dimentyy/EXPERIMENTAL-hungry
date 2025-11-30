@@ -5,7 +5,7 @@ use crate::code::write_escaped;
 use crate::meta::Combinator;
 
 pub(super) fn write_identifiable(f: &mut F, _cfg: &Cfg, x: &Combinator) -> Result<()> {
-    f.write_all(b"\nimpl _tl::Identifiable for ")?;
+    f.write_all(b"\nimpl crate::Identifiable for ")?;
     write_escaped(f, &x.name.actual)?;
     f.write_all(b" {\n    const CONSTRUCTOR_ID: u32 = 0x")?;
 

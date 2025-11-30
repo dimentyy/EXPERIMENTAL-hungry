@@ -1,6 +1,6 @@
 use std::ptr;
 
-use crate::tl::de::{Buf, Deserialize, Error};
+use crate::de::{Buf, Deserialize, Error};
 
 impl Deserialize for Vec<u8> {
     const MINIMUM_SERIALIZED_LEN: usize = 4;

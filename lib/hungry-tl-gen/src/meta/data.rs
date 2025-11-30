@@ -203,7 +203,7 @@ impl Data {
 
         let mut args = IndexMap::with_capacity(combinator.args.len());
 
-        for arg in &combinator.args {
+        for (i, arg) in combinator.args.iter().enumerate() {
             let typ = match &arg.typ {
                 read::ArgTyp::Typ {
                     excl_mark,
@@ -212,7 +212,7 @@ impl Data {
                 } => {
                     let flag = match flag {
                         None => None,
-                        Some(flag) => Some(Flag::find(&args, flag)?),
+                        Some(flag) => Some(Flag::find(&mut args, i, flag)?),
                     };
 
                     if typ.ident == read::Ident::TRUE {
@@ -231,7 +231,7 @@ impl Data {
                         ArgTyp::Typ { typ, flag }
                     }
                 }
-                read::ArgTyp::Nat => ArgTyp::Flags,
+                read::ArgTyp::Nat => ArgTyp::Flags { args: Vec::new() },
             };
 
             let name = rust::snake_case(arg.ident);
@@ -269,7 +269,7 @@ impl Data {
             TypeOrEnum::Type(index) => {
                 for arg in &self.types[index].combinator.args {
                     let typ = match &arg.typ {
-                        ArgTyp::Flags => continue,
+                        ArgTyp::Flags { .. } => continue,
                         ArgTyp::Typ { typ, .. } => typ,
                         ArgTyp::True { .. } => continue,
                     };

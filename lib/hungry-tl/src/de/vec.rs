@@ -1,5 +1,5 @@
-use crate::tl::de::{Buf, Deserialize, DeserializeInfallible, DeserializeUnchecked, Error};
-use crate::tl::{BareVec, VECTOR};
+use crate::de::{Buf, Deserialize, DeserializeInfallible, DeserializeUnchecked, Error};
+use crate::{BareVec, VECTOR};
 
 #[inline]
 unsafe fn deserialize_vec<T: Deserialize>(buf: &mut Buf) -> Result<Vec<T>, Error> {

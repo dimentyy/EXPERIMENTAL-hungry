@@ -7,7 +7,7 @@ use crate::meta::{Arg, ArgTyp, Combinator, Data, Enum, Flag};
 
 fn write_structure_arg_len(f: &mut F, cfg: &Cfg, data: &Data, x: &Arg) -> Result<()> {
     match &x.typ {
-        ArgTyp::Flags => f.write_all(b"4"),
+        ArgTyp::Flags { .. } => f.write_all(b"4"),
         ArgTyp::Typ { typ, flag } => {
             if flag.is_some() {
                 f.write_all(b"if let Some(ref x) = ")?;
@@ -97,40 +97,21 @@ fn write_structure_ser(f: &mut F, cfg: &Cfg, data: &Data, func: bool, x: &Combin
         f.write_all(b"            buf = Self::CONSTRUCTOR_ID.serialize_unchecked(buf);\n")?;
     }
 
-    let mut flags = HashMap::<usize, Vec<usize>>::new();
-
-    for (i, arg) in x.args.iter().enumerate() {
-        match &arg.typ {
-            ArgTyp::Flags => {
-                continue
-            },
-            ArgTyp::Typ { typ, flag } => {
-                if let Some(flag) = flag {
-                    flags.entry(flag.arg).or_default().push(i);
-                }
-            },
-            ArgTyp::True { flag } => {
-                flags.entry(flag.arg).or_default().push(i);
-            },
-        };
-    }
-
     for (i, arg) in x.args.iter().enumerate() {
         let (typ, optional) = match &arg.typ {
-            ArgTyp::Flags => {
+            ArgTyp::Flags { args } => {
                 f.write_all(b"            buf = ")?;
-                let vec = flags.remove(&i).unwrap_or_default();
-                if vec.is_empty() {
+                if args.is_empty() {
                     f.write_all(b"0u32")?;
                 } else {
                     f.write_all(b"(")?;
-                    for arg in &vec[..vec.len()-1] {
+                    for arg in &args[..args.len()-1] {
                         write_flag_arg(f, cfg, x, *arg)?;
 
                         f.write_all(b" | ")?;
                     }
 
-                    write_flag_arg(f, cfg, x, *vec.last().unwrap())?;
+                    write_flag_arg(f, cfg, x, *args.last().unwrap())?;
 
                     f.write_all(b")")?;
                 }
@@ -174,7 +155,7 @@ fn write_enum_ser(f: &mut F, cfg: &Cfg, data: &Data, x: &Enum) -> Result<()> {
 }
 
 pub(super) fn write_serialize(f: &mut F, cfg: &Cfg, data: &Data, x: X) -> Result<()> {
-    f.write_all(b"\nimpl _tl::Serialize for ")?;
+    f.write_all(b"\nimpl crate::Serialize for ")?;
     f.write_all(x.name().actual.as_bytes())?;
     f.write_all(b" {\n    fn serialized_len(&self) -> usize {\n        ")?;
     match x {

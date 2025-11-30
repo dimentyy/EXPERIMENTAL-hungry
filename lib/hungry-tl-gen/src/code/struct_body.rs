@@ -12,7 +12,7 @@ fn write_arg(
     arg: &Arg,
 ) -> Result<()> {
     let (typ, optional) = match &arg.typ {
-        ArgTyp::Flags => return Ok(()),
+        ArgTyp::Flags { .. } => return Ok(()),
         ArgTyp::Typ { typ, flag } => (typ, flag.is_some()),
         ArgTyp::True { .. } => (&Typ::Bool, false),
     };
@@ -40,12 +40,12 @@ pub(super) fn write_struct_body(f: &mut F, cfg: &Cfg, data: &Data, x: &Combinato
     if let Some(arg) = iter.next() {
         f.write_all(b"<")?;
         f.write_all(arg.name.as_bytes())?;
-        f.write_all(b": _tl::Function")?;
+        f.write_all(b": crate::Function")?;
 
         for arg in iter {
             f.write_all(b", ")?;
             f.write_all(arg.name.as_bytes())?;
-            f.write_all(b": _tl::Function")?;
+            f.write_all(b": crate::Function")?;
         }
 
         f.write_all(b">")?;

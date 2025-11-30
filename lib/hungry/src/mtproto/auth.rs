@@ -1,7 +1,7 @@
-use crate::{mtproto, tl};
+use crate::tl;
 
-pub fn req_pq_multi(nonce: tl::Int128) -> mtproto::tl::funcs::ReqPqMulti {
-    mtproto::tl::funcs::ReqPqMulti { nonce }
+pub fn req_pq_multi(nonce: tl::Int128) -> tl::mtproto::funcs::ReqPqMulti {
+    tl::mtproto::funcs::ReqPqMulti { nonce }
 }
 
-// pub fn req_dh_params(res_pq: mtproto::tl::enums::ResPq) -> mtproto::tl::funcs:: {}
+// pub fn req_dh_params(res_pq: mtproto::schema::enums::ResPq) -> mtproto::schema::funcs:: {}

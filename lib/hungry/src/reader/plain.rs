@@ -22,7 +22,8 @@ impl From<de::Error> for PlainDeserializerError {
 pub struct PlainDeserializer<T: de::Deserialize + Unpin>(PhantomData<T>);
 
 impl<T: de::Deserialize + Unpin> PlainDeserializer<T> {
-    pub fn new() -> Self {
+    #[inline]
+    pub const fn new() -> Self {
         Self(PhantomData)
     }
 }

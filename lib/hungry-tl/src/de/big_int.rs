@@ -1,4 +1,4 @@
-use crate::tl::{de::DeserializeInfallible, Int128, Int256};
+use crate::{de::DeserializeInfallible, Int128, Int256};
 
 macro_rules! big_int {
     ( $( $typ:ty => $len:expr ),+ $(,)? ) => { $(

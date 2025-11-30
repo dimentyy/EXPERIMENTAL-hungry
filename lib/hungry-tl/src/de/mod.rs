@@ -5,7 +5,7 @@ mod error;
 mod primitives;
 mod vec;
 
-use crate::tl::SerializedLen;
+use crate::SerializedLen;
 
 pub use buf::Buf;
 pub use error::Error;

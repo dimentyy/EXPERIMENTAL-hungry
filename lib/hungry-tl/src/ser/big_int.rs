@@ -1,6 +1,6 @@
 use std::ptr;
 
-use crate::tl::{Int128, Int256, Serialize};
+use crate::{Int128, Int256, Serialize};
 
 macro_rules! big_int {
     ( $( $typ:ty => $len:expr ),+ $(,)? ) => { $(

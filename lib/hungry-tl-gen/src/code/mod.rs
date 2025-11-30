@@ -148,6 +148,9 @@ fn write_type(cfg: &Cfg, data: &Data, x: &Type) -> Result<()> {
     write_struct_body(f, cfg, data, &x.combinator)?;
     write_identifiable(f, cfg, &x.combinator)?;
     write_serialize(f, cfg, data, X::Type(x))?;
+    if x.combinator.args.is_empty() {
+        write_serialized_len(f, &x.combinator.name.actual, 0)?;
+    }
     write_deserializable(f, cfg, data, X::Type(x))?;
 
     f.flush()
@@ -179,11 +182,9 @@ fn write_enum(cfg: &Cfg, data: &Data, x: &Enum) -> Result<()> {
 }
 
 fn write_imports(f: &mut F, cfg: &Cfg) -> Result<()> {
-    f.write_all(b"use ")?;
-    f.write_all(cfg.main_tl_path.as_bytes())?;
-    f.write_all(b"::{self as _tl, Identifiable as _Identifiable};\nuse ")?;
-    f.write_all(cfg.include_path.as_bytes())?;
-    f.write_all(b"::{types as _types, enums as _enums};\n")
+    f.write_all(b"use crate::{")?;
+    f.write_all(cfg.schema_title.as_bytes())?;
+    f.write_all(b"::{types as _types, enums as _enums}, Identifiable as _};\n")
 }
 
 fn write_derive_macros(f: &mut F, cfg: &Cfg) -> Result<()> {

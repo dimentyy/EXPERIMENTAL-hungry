@@ -17,14 +17,14 @@ impl<T: reader::ReaderBehaviour> reader::ReaderBehaviour for Dump<T> {
             Unpack::Envelope { data, next } => {
                 let message = mtproto::Message::unpack(&buffer[data.clone()]);
 
-                format!("READER: acquired {message}")
+                &format!("READER: acquired {message}")
             }
             Unpack::QuickAck { token, len } => {
-                format!("READER: quick ack 0x{token:08x}, len: {len}")
+                &format!("READER: quick ack 0x{token:08x}, len: {len}")
             }
         };
 
-        utils::dump(buffer, &title);
+        utils::dump(buffer, title);
 
         self.0.acquired(buffer, unpack)
     }

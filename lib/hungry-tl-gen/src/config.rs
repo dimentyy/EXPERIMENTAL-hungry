@@ -11,8 +11,6 @@ pub struct Config {
     pub derive_clone: bool,
     pub derive_debug: bool,
     pub schema_title: String,
-    pub main_tl_path: String,
-    pub include_path: String,
 }
 
 pub(crate) struct Cfg {

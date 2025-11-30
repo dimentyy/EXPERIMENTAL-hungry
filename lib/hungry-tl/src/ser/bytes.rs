@@ -1,6 +1,6 @@
 use std::ptr;
 
-use crate::tl::Serialize;
+use crate::Serialize;
 
 impl Serialize for [u8] {
     #[inline]
