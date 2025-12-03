@@ -1,18 +1,26 @@
 use crate::de::{DeserializeInfallible, DeserializeUnchecked, Error};
 use crate::{BOOL_FALSE, BOOL_TRUE};
 
-macro_rules! int {
-    ( $( $typ:ty ),+ ) => { $(
-        impl DeserializeInfallible for $typ {
-            #[inline]
-            unsafe fn deserialize_infallible(buf: *const u8) -> Self {
-                Self::from_le(unsafe { (buf as *const Self).read_unaligned() })
-            }
-        }
-    )+ }
+impl DeserializeInfallible for u32 {
+    #[inline]
+    unsafe fn deserialize_infallible(buf: *const u8) -> Self {
+        Self::from_le(unsafe { *(buf as *const Self) })
+    }
 }
 
-int!(u32, i32, i64);
+impl DeserializeInfallible for i32 {
+    #[inline]
+    unsafe fn deserialize_infallible(buf: *const u8) -> Self {
+        Self::from_le(unsafe { *(buf as *const Self) })
+    }
+}
+
+impl DeserializeInfallible for i64 {
+    #[inline]
+    unsafe fn deserialize_infallible(buf: *const u8) -> Self {
+        Self::from_le(unsafe { (buf as *const Self).read_unaligned() })
+    }
+}
 
 impl DeserializeInfallible for f64 {
     #[inline]

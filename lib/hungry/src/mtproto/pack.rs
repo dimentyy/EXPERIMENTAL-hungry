@@ -3,7 +3,7 @@ use bytes::BytesMut;
 use crate::crypto::aes_ige_encrypt;
 use crate::mtproto::{AuthKey, Envelope, PlainEnvelope, Side};
 
-pub(crate) fn plain(buffer: &mut BytesMut, mut envelope: PlainEnvelope, message_id: i64) {
+pub(crate) fn pack_plain(buffer: &mut BytesMut, mut envelope: PlainEnvelope, message_id: i64) {
     let excess = envelope.adapt(buffer);
     let (h, _) = envelope.buffers();
 
@@ -16,7 +16,7 @@ pub(crate) fn plain(buffer: &mut BytesMut, mut envelope: PlainEnvelope, message_
     envelope.unsplit(buffer, excess);
 }
 
-pub(crate) fn encrypted(
+pub(crate) fn pack_encrypted(
     buffer: &mut BytesMut,
     mut envelope: Envelope,
     auth_key: &AuthKey,

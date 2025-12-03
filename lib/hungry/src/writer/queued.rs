@@ -10,7 +10,7 @@ use crate::envelope::Envelope;
 use crate::mtproto;
 use crate::transport::{Transport, TransportWrite};
 use crate::utils::ready_ok;
-use crate::writer::Writer;
+use crate::writer::{write_zero_err, Writer};
 
 pub struct QueuedWriter<W: AsyncWrite + Unpin, T: Transport> {
     ready: VecDeque<BytesMut>,
@@ -44,7 +44,7 @@ impl<W: AsyncWrite + Unpin, T: Transport> QueuedWriter<W, T> {
         mtp: mtproto::PlainEnvelope,
         message_id: i64,
     ) {
-        mtproto::pack::plain(&mut buffer, mtp, message_id);
+        mtproto::pack_plain(&mut buffer, mtp, message_id);
 
         self.queue_impl(buffer, transport);
     }
@@ -58,12 +58,13 @@ impl<W: AsyncWrite + Unpin, T: Transport> QueuedWriter<W, T> {
         salt: i64,
         session_id: i64,
     ) {
-        mtproto::pack::encrypted(&mut buffer, mtp, auth_key, salt, session_id);
+        mtproto::pack_encrypted(&mut buffer, mtp, auth_key, salt, session_id);
 
         self.queue_impl(buffer, transport);
     }
 
     pub fn poll(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<BytesMut>> {
+        // Buffers may be returned out of order due to multiple being queued at the same time.
         if let Some(buffer) = self.ready.pop_front() {
             return Poll::Ready(Ok(buffer));
         }
@@ -72,17 +73,15 @@ impl<W: AsyncWrite + Unpin, T: Transport> QueuedWriter<W, T> {
             return Poll::Pending;
         };
 
+        // Loop may not be used here because a written buffer will be lost due to an error.
+        // Storing io::Error in the Writer to return in the next poll would be an overkill.
         let ready = match ready_ok!(pin!(&mut self.writer.driver).poll_write(cx, buffer.as_ref())) {
-            0 => Err(io::Error::new(io::ErrorKind::WriteZero, "wrote 0 bytes")),
-            n if n == buffer.len() => Ok(self.buffers.pop_front().unwrap()),
-            n => Ok(buffer.split_to(n)),
+            0 => write_zero_err!(),
+            n if n == buffer.len() => self.buffers.pop_front().unwrap(),
+            n => buffer.split_to(n),
         };
 
-        if let Ok(buffer) = ready.as_ref() {
-            crate::utils::dump(buffer.as_ref(), "WROTE");
-        }
-
-        Poll::Ready(ready)
+        Poll::Ready(Ok(ready))
     }
 }
 

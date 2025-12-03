@@ -23,7 +23,7 @@ pub use envelope::{Envelope, EnvelopeSize};
 pub fn new<
     T: transport::Transport + Default,
     R: AsyncRead + Unpin,
-    B: reader::ReaderBehaviour,
+    B: reader::Handle,
     W: AsyncWrite + Unpin,
 >(
     reader: R,

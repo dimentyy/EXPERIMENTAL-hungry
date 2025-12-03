@@ -5,17 +5,16 @@ use bytes::BytesMut;
 use tokio::io::{AsyncRead, AsyncWrite};
 
 use crate::mtproto::{EncryptedMessage, PlainEnvelope};
-use crate::reader::{Error as ReaderError, Reader, ReaderBehaviour, Split};
+use crate::reader::{Error as ReaderError, Handle, HandleOutput, Reader, Split};
 use crate::transport::{Packet, QuickAck, Transport, Unpack};
 use crate::writer::Writer;
 use crate::{mtproto, tl, Envelope};
 
-#[derive(Debug, thiserror::Error)]
-#[error("error")]
+#[derive(Debug)]
 pub enum Error {
-    Reader(#[from] ReaderError),
+    Reader(ReaderError),
     Writer(io::Error),
-    Deserialization(#[from] tl::de::Error),
+    Deserialization(tl::de::Error),
     QuickAck(QuickAck),
     Encrypted(EncryptedMessage),
 }
@@ -23,11 +22,11 @@ pub enum Error {
 pub async fn send<
     T: Transport,
     R: AsyncRead + Unpin,
-    B: ReaderBehaviour<Unpack = <Split as ReaderBehaviour>::Unpack>,
+    H: Handle<Output = <Split as HandleOutput>::Output>,
     W: AsyncWrite + Unpin,
     F: tl::Function,
 >(
-    r: &mut Reader<R, B, T>,
+    r: &mut Reader<R, H, T>,
     w: &mut Writer<W, T>,
     func: &F,
     buffer: &mut BytesMut,
@@ -40,9 +39,9 @@ pub async fn send<
         func.serialize_unchecked(buffer.as_mut_ptr());
     }
 
-    mtproto::pack::plain(buffer, mtp, message_id);
-
-    w.write(buffer, transport).await.map_err(Error::Writer)?;
+    w.single(buffer, transport, mtp, message_id)
+        .await
+        .map_err(Error::Writer)?;
 
     let (buffer, unpack) = r.await.map_err(Error::Reader)?;
 
@@ -61,7 +60,8 @@ pub async fn send<
     };
 
     let mut buf = tl::de::Buf::new(&buffer[data.start + 20..data.end]);
-    let value = tl::de::Deserialize::deserialize_checked(&mut buf)?;
+    let value =
+        tl::de::Deserialize::deserialize_checked(&mut buf).map_err(Error::Deserialization)?;
 
     Ok(value)
 }

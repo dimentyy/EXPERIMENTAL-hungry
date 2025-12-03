@@ -1,7 +1,7 @@
 use bytes::BytesMut;
 
-use hungry::{tl, Envelope};
-use hungry::reader::{Dump, Split};
+use hungry::reader::{Dump, Parted, Reserve, Split};
+use hungry::{Envelope, tl};
 
 const ADDR: &str = "149.154.167.40:443";
 
@@ -12,7 +12,10 @@ async fn main() -> anyhow::Result<()> {
     let stream = tokio::net::TcpStream::connect(ADDR).await?;
     let (r, w) = stream.into_split();
 
-    let behaviour = Dump(Split);
+    let behaviour = Dump(Parted {
+        buffer: Reserve,
+        output: Split,
+    });
 
     let buffer = BytesMut::with_capacity(1024);
 
@@ -35,8 +38,10 @@ async fn main() -> anyhow::Result<()> {
         &mut buffer,
         transport_envelope,
         mtp_envelope,
-        0
-    ).await?;
+        0,
+    )
+    .await
+    .unwrap();
 
     dbg!(&response);
 

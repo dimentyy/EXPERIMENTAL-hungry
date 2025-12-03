@@ -1,10 +1,12 @@
 mod auth_key;
+mod pack;
 mod unpack;
 
-mod auth;
-pub(crate) mod pack;
+pub mod auth;
 
 use crate::envelopes;
+
+pub(crate) use pack::{pack_encrypted, pack_plain};
 
 pub use auth_key::AuthKey;
 pub use unpack::{DecryptedMessage, EncryptedMessage, Message, PlainMessage};

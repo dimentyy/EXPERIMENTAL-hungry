@@ -7,10 +7,21 @@ use std::task::{Context, Poll};
 use tokio::io::AsyncWrite;
 
 use crate::transport::{Transport, TransportWrite};
-
 use crate::utils::ready_ok;
-use crate::{Envelope, EnvelopeSize};
+use crate::{mtproto, Envelope, EnvelopeSize};
+
 pub use queued::QueuedWriter;
+
+macro_rules! write_zero_err {
+    () => {
+        return Poll::Ready(Err(io::Error::new(
+            io::ErrorKind::WriteZero,
+            "wrote 0 bytes",
+        )))
+    };
+}
+
+pub(self) use write_zero_err;
 
 pub struct Writer<W: AsyncWrite + Unpin, T: Transport> {
     driver: W,
@@ -22,14 +33,18 @@ impl<W: AsyncWrite + Unpin, T: Transport> Writer<W, T> {
         Self { driver, transport }
     }
 
-    pub(crate) fn write<'a>(
+    pub(crate) fn single<'a>(
         &'a mut self,
         buffer: &'a mut BytesMut,
-        envelope: Envelope<T>,
-    ) -> Write<'a, W, T> {
-        let range = self.transport.pack(buffer, envelope);
+        transport: Envelope<T>,
+        mtp: mtproto::PlainEnvelope,
+        message_id: i64,
+    ) -> Single<'a, W, T> {
+        mtproto::pack_plain(buffer, mtp, message_id);
 
-        Write {
+        let range = self.transport.pack(buffer, transport);
+
+        Single {
             writer: self,
             buffer,
             pos: range.start,
@@ -37,13 +52,13 @@ impl<W: AsyncWrite + Unpin, T: Transport> Writer<W, T> {
     }
 }
 
-pub struct Write<'a, W: AsyncWrite + Unpin, T: Transport> {
+pub struct Single<'a, W: AsyncWrite + Unpin, T: Transport> {
     writer: &'a mut Writer<W, T>,
     buffer: &'a mut BytesMut,
     pos: usize,
 }
 
-impl<'a, W: AsyncWrite + Unpin, T: Transport> Write<'a, W, T> {
+impl<'a, W: AsyncWrite + Unpin, T: Transport> Single<'a, W, T> {
     #[inline]
     pub fn pos(self) -> usize {
         self.pos
@@ -55,16 +70,14 @@ impl<'a, W: AsyncWrite + Unpin, T: Transport> Write<'a, W, T> {
 
             if buf.is_empty() {
                 crate::utils::dump(self.buffer.as_ref(), "WROTE");
+
                 return Poll::Ready(Ok(()));
             }
 
             let n = ready_ok!(pin!(&mut self.writer.driver).poll_write(cx, buf));
 
             if n == 0 {
-                return Poll::Ready(Err(io::Error::new(
-                    io::ErrorKind::WriteZero,
-                    "wrote 0 bytes",
-                )));
+                write_zero_err!();
             }
 
             self.pos += n;
@@ -72,7 +85,7 @@ impl<'a, W: AsyncWrite + Unpin, T: Transport> Write<'a, W, T> {
     }
 }
 
-impl<'a, W: AsyncWrite + Unpin, T: Transport> Future for Write<'a, W, T> {
+impl<'a, W: AsyncWrite + Unpin, T: Transport> Future for Single<'a, W, T> {
     type Output = io::Result<()>;
 
     #[inline]

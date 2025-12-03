@@ -1,18 +1,14 @@
-use crate::transport::{Packet, QuickAck, Unpack};
-use crate::{mtproto, reader, utils};
 use bytes::BytesMut;
 
-pub struct Dump<T: reader::ReaderBehaviour>(pub T);
+use crate::transport::{Packet, QuickAck, Unpack};
+use crate::{mtproto, reader, utils};
 
-impl<T: reader::ReaderBehaviour> reader::ReaderBehaviour for Dump<T> {
-    type Unpack = T::Unpack;
+pub struct Dump<T: reader::Handle>(pub T);
 
-    fn required(&mut self, buffer: &mut BytesMut, length: usize) {
-        println!("READER: required {length}");
-        self.0.required(buffer, length);
-    }
+impl<T: reader::Handle> reader::HandleOutput for Dump<T> {
+    type Output = T::Output;
 
-    fn acquired(&mut self, buffer: &mut BytesMut, unpack: Unpack) -> Self::Unpack {
+    fn acquired(&mut self, buffer: &mut BytesMut, unpack: Unpack) -> Self::Output {
         let title = match &unpack {
             Unpack::Packet(Packet { data, next }) => {
                 let message = mtproto::Message::unpack(&buffer[data.clone()]);
@@ -27,5 +23,12 @@ impl<T: reader::ReaderBehaviour> reader::ReaderBehaviour for Dump<T> {
         utils::dump(buffer, title);
 
         self.0.acquired(buffer, unpack)
+    }
+}
+
+impl<T: reader::Handle> reader::HandleBuffer for Dump<T> {
+    fn required(&mut self, buffer: &mut BytesMut, length: usize) {
+        println!("READER: required {length}");
+        self.0.required(buffer, length);
     }
 }
